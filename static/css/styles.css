@@ -1,0 +1,256 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background-color: #f5f5f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.calendar-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 1200px;
+    overflow: hidden;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 30px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.calendar-header h2 {
+    font-size: 24px;
+    font-weight: 500;
+    color: #333;
+}
+
+.nav-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    padding: 5px 15px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.nav-button:hover {
+    background-color: #e9ecef;
+}
+
+.calendar-grid {
+    padding: 20px;
+}
+
+.weekday-headers {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #e9ecef;
+    border: 1px solid #e9ecef;
+    margin-bottom: 0;
+}
+
+.day-header {
+    background: white;
+    text-align: center;
+    font-weight: 600;
+    color: #666;
+    padding: 15px 0;
+    font-size: 14px;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background-color: #e9ecef;
+    border: 1px solid #e9ecef;
+    border-top: none;
+}
+
+.calendar-day {
+    background: white;
+    height: 120px;
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+}
+
+.calendar-day.other-month {
+    color: #ccc;
+}
+
+.calendar-day.today {
+    background-color: #e3f2fd;
+}
+
+.calendar-day.selected {
+    background-color: #1976d2;
+    color: white;
+}
+
+.calendar-day.selected .day-number {
+    color: white;
+}
+
+.calendar-day.blank {
+    cursor: default;
+    background-color: #fafafa;
+}
+
+.calendar-day.blank:hover {
+    background-color: #fafafa;
+}
+
+.day-number {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.event {
+    font-size: 12px;
+    padding: 2px 6px;
+    margin: 2px 0;
+    border-radius: 4px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    cursor: pointer;
+    line-height: 1.2;
+    display: block;
+    max-width: 100%;
+    hyphens: auto;
+}
+
+.event.default {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.event.holiday {
+    background-color: #ffe0e0;
+    color: #d32f2f;
+}
+
+.event.personal {
+    background-color: #f0f0f0;
+    color: #666;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 20px;
+}
+
+.close:hover {
+    color: #333;
+}
+
+.modal h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.modal input,
+.modal select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.modal button {
+    background-color: #1976d2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
+}
+
+.modal button:hover {
+    background-color: #1565c0;
+}
+
+#delete-event {
+    background-color: #d32f2f;
+}
+
+#delete-event:hover {
+    background-color: #c62828;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .calendar-day {
+        height: 80px;
+        padding: 5px;
+    }
+    
+    .day-number {
+        font-size: 14px;
+    }
+    
+    .event {
+        font-size: 11px;
+        padding: 1px 4px;
+    }
+    
+    .day-header {
+        font-size: 12px;
+        padding: 10px 0;
+    }
+}
