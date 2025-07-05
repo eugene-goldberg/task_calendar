@@ -1,14 +1,22 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Dict, Optional
-from datetime import datetime
-import json
+from datetime import datetime, date
+from sqlalchemy.orm import Session
+from sqlalchemy import and_, extract
 import os
 
+from database import get_db, init_db, Event as EventModel
+
 app = FastAPI()
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 # Configure CORS
 app.add_middleware(
@@ -21,20 +29,6 @@ app.add_middleware(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# In-memory storage (you can replace this with a database later)
-events_storage: Dict[str, List[dict]] = {}
-
-# Load events from file if exists (for persistence)
-EVENTS_FILE = "events.json"
-if os.path.exists(EVENTS_FILE):
-    with open(EVENTS_FILE, "r") as f:
-        events_storage = json.load(f)
-
-def save_events_to_file():
-    """Save events to file for persistence"""
-    with open(EVENTS_FILE, "w") as f:
-        json.dump(events_storage, f)
 
 # Pydantic models
 class Event(BaseModel):
@@ -52,58 +46,111 @@ async def root():
         return f.read()
 
 @app.get("/api/events")
-async def get_events():
-    """Get all events"""
-    return events_storage
+async def get_events(db: Session = Depends(get_db)):
+    """Get all events organized by date"""
+    events = db.query(EventModel).all()
+    
+    # Group events by date
+    events_by_date: Dict[str, List[dict]] = {}
+    for event in events:
+        date_key = event.date.strftime("%Y-%m-%d")
+        if date_key not in events_by_date:
+            events_by_date[date_key] = []
+        events_by_date[date_key].append(event.to_dict())
+    
+    return events_by_date
 
 @app.get("/api/events/{date}")
-async def get_events_by_date(date: str):
+async def get_events_by_date(date: str, db: Session = Depends(get_db)):
     """Get events for a specific date"""
-    return events_storage.get(date, [])
+    try:
+        # Parse date string
+        target_date = datetime.strptime(date, "%Y-%m-%d").date()
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    
+    # Query events for the specific date
+    events = db.query(EventModel).filter(
+        and_(
+            extract('year', EventModel.date) == target_date.year,
+            extract('month', EventModel.date) == target_date.month,
+            extract('day', EventModel.date) == target_date.day
+        )
+    ).all()
+    
+    return [event.to_dict() for event in events]
 
 @app.post("/api/events/{date}")
-async def create_event(date: str, event: Event):
+async def create_event(date: str, event: Event, db: Session = Depends(get_db)):
     """Create a new event"""
-    if date not in events_storage:
-        events_storage[date] = []
+    try:
+        # Parse date string to ensure it's valid
+        event_date = datetime.strptime(date, "%Y-%m-%d")
+        
+        # If event.date is provided, use it; otherwise use the date from URL
+        if event.date:
+            event_date = datetime.fromisoformat(event.date.replace('Z', '+00:00'))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format")
     
     # Generate ID if not provided
     if not event.id:
         event.id = str(int(datetime.now().timestamp() * 1000))
     
-    event_dict = event.dict()
-    events_storage[date].append(event_dict)
-    save_events_to_file()
+    # Create database event
+    db_event = EventModel(
+        event_id=event.id,
+        title=event.title,
+        date=event_date
+    )
     
-    return {"message": "Event created", "event": event_dict}
+    db.add(db_event)
+    try:
+        db.commit()
+        db.refresh(db_event)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    return {"message": "Event created", "event": db_event.to_dict()}
 
 @app.put("/api/events/{date}/{event_id}")
-async def update_event(date: str, event_id: str, event_update: EventUpdate):
+async def update_event(date: str, event_id: str, event_update: EventUpdate, db: Session = Depends(get_db)):
     """Update an existing event"""
-    if date not in events_storage:
-        raise HTTPException(status_code=404, detail="Date not found")
+    # Find event by event_id
+    db_event = db.query(EventModel).filter(EventModel.event_id == event_id).first()
     
-    for i, event in enumerate(events_storage[date]):
-        if event["id"] == event_id:
-            events_storage[date][i]["title"] = event_update.title
-            save_events_to_file()
-            return {"message": "Event updated", "event": events_storage[date][i]}
+    if not db_event:
+        raise HTTPException(status_code=404, detail="Event not found")
     
-    raise HTTPException(status_code=404, detail="Event not found")
+    # Update event
+    db_event.title = event_update.title
+    
+    try:
+        db.commit()
+        db.refresh(db_event)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    return {"message": "Event updated", "event": db_event.to_dict()}
 
 @app.delete("/api/events/{date}/{event_id}")
-async def delete_event(date: str, event_id: str):
+async def delete_event(date: str, event_id: str, db: Session = Depends(get_db)):
     """Delete an event"""
-    if date not in events_storage:
-        raise HTTPException(status_code=404, detail="Date not found")
+    # Find event by event_id
+    db_event = db.query(EventModel).filter(EventModel.event_id == event_id).first()
     
-    events_storage[date] = [e for e in events_storage[date] if e["id"] != event_id]
+    if not db_event:
+        raise HTTPException(status_code=404, detail="Event not found")
     
-    # Remove empty date entries
-    if not events_storage[date]:
-        del events_storage[date]
+    db.delete(db_event)
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
     
-    save_events_to_file()
     return {"message": "Event deleted"}
 
 if __name__ == "__main__":
