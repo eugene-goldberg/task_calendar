@@ -115,14 +115,12 @@ function renderCalendar() {
     // Get first day of month and number of days
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
     
     // Add blank cells for days before the first day of month
     for (let i = 0; i < firstDay; i++) {
         const blankDay = document.createElement('div');
         blankDay.className = 'calendar-day other-month';
-        const dayNum = daysInPrevMonth - firstDay + i + 1;
-        blankDay.innerHTML = `<span class="day-number">${dayNum}</span>`;
+        // Leave the cell empty - no date number
         calendarDays.appendChild(blankDay);
     }
     
@@ -133,14 +131,14 @@ function renderCalendar() {
         calendarDays.appendChild(dayElement);
     }
     
-    // Add days from next month to fill the grid
+    // Add blank cells to fill the grid
     const totalCells = calendarDays.children.length;
     const remainingCells = 42 - totalCells; // 6 weeks * 7 days
     
-    for (let day = 1; day <= remainingCells; day++) {
+    for (let i = 0; i < remainingCells; i++) {
         const blankDay = document.createElement('div');
         blankDay.className = 'calendar-day other-month';
-        blankDay.innerHTML = `<span class="day-number">${day}</span>`;
+        // Leave the cell empty - no date number
         calendarDays.appendChild(blankDay);
     }
 }
