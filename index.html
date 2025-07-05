@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar App</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button id="prev-month" class="nav-button">&lt;</button>
+            <h2 id="current-month">July 2025</h2>
+            <button id="next-month" class="nav-button">&gt;</button>
+        </div>
+        <div class="calendar-grid">
+            <div class="weekday-headers">
+                <div class="day-header">SUN</div>
+                <div class="day-header">MON</div>
+                <div class="day-header">TUE</div>
+                <div class="day-header">WED</div>
+                <div class="day-header">THU</div>
+                <div class="day-header">FRI</div>
+                <div class="day-header">SAT</div>
+            </div>
+            <div id="calendar-days" class="calendar-days"></div>
+        </div>
+    </div>
+    
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Add/Edit Event</h3>
+            <input type="text" id="event-title" placeholder="Event title">
+            <button id="save-event">Save</button>
+            <button id="delete-event" style="display:none;">Delete</button>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
