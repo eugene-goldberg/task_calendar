@@ -10,6 +10,7 @@ from sqlalchemy import and_, extract
 import os
 
 from database import get_db, init_db, Event as EventModel
+from config import ALLOWED_ORIGINS, ENVIRONMENT
 
 app = FastAPI()
 
@@ -17,11 +18,12 @@ app = FastAPI()
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    print(f"Running in {ENVIRONMENT} mode")
 
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

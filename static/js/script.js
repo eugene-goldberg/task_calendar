@@ -91,6 +91,11 @@ function setupEventListeners() {
         }
     });
     
+    // Close modal when clicking the X button
+    document.querySelector('.close').addEventListener('click', () => {
+        document.getElementById('event-modal').style.display = 'none';
+    });
+    
     // Save event
     document.getElementById('save-event').addEventListener('click', saveEventHandler);
     

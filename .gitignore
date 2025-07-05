@@ -33,6 +33,7 @@ events.json
 .env
 .env.local
 .env.production
+.env.*
 
 # IDE
 .vscode/

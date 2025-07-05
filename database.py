@@ -1,15 +1,8 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.sql import func
-from dotenv import load_dotenv
-import os
 from datetime import datetime
-
-# Load environment variables
-load_dotenv()
-
-# Database URL - using psycopg3 dialect
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg://calendar_user:calendar_pass@localhost:5433/calendar_db")
+from config import DATABASE_URL
 
 # Create engine
 engine = create_engine(DATABASE_URL, echo=False)
