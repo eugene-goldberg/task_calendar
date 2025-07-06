@@ -282,6 +282,7 @@ function openEventModal(date, event = null) {
     document.getElementById('recur-daily').checked = false;
     document.getElementById('recur-weekly').checked = false;
     document.getElementById('recur-monthly').checked = false;
+    document.getElementById('recur-quarterly').checked = false;
     
     if (event) {
         // Edit existing event
@@ -349,6 +350,9 @@ async function saveEventHandler() {
         }
         if (document.getElementById('recur-monthly').checked) {
             recurrenceTypes.push('monthly');
+        }
+        if (document.getElementById('recur-quarterly').checked) {
+            recurrenceTypes.push('quarterly');
         }
         
         // Create new event

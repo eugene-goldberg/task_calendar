@@ -150,6 +150,8 @@ async def create_event(date: str, event: Event, db: Session = Depends(get_db)):
                     current_date += timedelta(weeks=1)
                 elif recurrence_type == 'monthly':
                     current_date += relativedelta(months=1)
+                elif recurrence_type == 'quarterly':
+                    current_date += relativedelta(months=3)
     
     try:
         db.commit()
