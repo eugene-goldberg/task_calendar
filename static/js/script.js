@@ -136,15 +136,18 @@ function renderCalendar() {
         calendarDays.appendChild(dayElement);
     }
     
-    // Add blank cells to fill the grid
+    // Add blank cells to complete the last row only
     const totalCells = calendarDays.children.length;
-    const remainingCells = 42 - totalCells; // 6 weeks * 7 days
+    const lastRowCells = totalCells % 7;
     
-    for (let i = 0; i < remainingCells; i++) {
-        const blankDay = document.createElement('div');
-        blankDay.className = 'calendar-day other-month';
-        // Leave the cell empty - no date number
-        calendarDays.appendChild(blankDay);
+    if (lastRowCells !== 0) {
+        const remainingCells = 7 - lastRowCells;
+        for (let i = 0; i < remainingCells; i++) {
+            const blankDay = document.createElement('div');
+            blankDay.className = 'calendar-day other-month';
+            // Leave the cell empty - no date number
+            calendarDays.appendChild(blankDay);
+        }
     }
 }
 
