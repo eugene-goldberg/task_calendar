@@ -33,6 +33,23 @@
             <span class="close">&times;</span>
             <h3 id="modal-date">Add/Edit Event</h3>
             <input type="text" id="event-title" placeholder="Event title">
+            
+            <div class="recurrence-options">
+                <h4>Repeat:</h4>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="recur-daily" name="recurrence" value="daily">
+                    Daily
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="recur-weekly" name="recurrence" value="weekly">
+                    Weekly
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="recur-monthly" name="recurrence" value="monthly">
+                    Monthly
+                </label>
+            </div>
+            
             <button id="save-event">Save</button>
             <button id="delete-event" style="display:none;">Delete</button>
         </div>

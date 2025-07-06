@@ -21,6 +21,8 @@ class Event(Base):
     event_id = Column(String(255), unique=True, index=True, nullable=False)  # Frontend ID
     title = Column(Text, nullable=False)
     date = Column(DateTime(timezone=True), nullable=False, index=True)
+    recurrence_type = Column(String(50), nullable=True)  # 'daily', 'weekly', 'monthly', or null
+    recurrence_group_id = Column(String(255), nullable=True, index=True)  # Groups recurring events together
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
@@ -29,7 +31,9 @@ class Event(Base):
         return {
             "id": self.event_id,
             "title": self.title,
-            "date": self.date.isoformat()
+            "date": self.date.isoformat(),
+            "recurrence_type": self.recurrence_type,
+            "recurrence_group_id": self.recurrence_group_id
         }
 
 # Dependency to get database session

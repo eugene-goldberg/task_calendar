@@ -197,11 +197,13 @@ body {
 
 .modal-content {
     background-color: white;
-    margin: 15% auto;
+    margin: 10% auto;
     padding: 30px;
     border-radius: 8px;
     width: 90%;
     max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -254,6 +256,32 @@ body {
 
 #delete-event:hover {
     background-color: #c62828;
+}
+
+/* Recurrence Options */
+.recurrence-options {
+    margin: 15px 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.recurrence-options h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.checkbox-label {
+    display: block;
+    margin: 8px 0;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
 }
 
 /* Responsive Design */

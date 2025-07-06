@@ -28,10 +28,13 @@ async function saveEvent(dateKey, eventData) {
             },
             body: JSON.stringify(eventData)
         });
-        return response.ok;
+        if (response.ok) {
+            return await response.json();
+        }
+        return null;
     } catch (error) {
         console.error('Error saving event:', error);
-        return false;
+        return null;
     }
 }
 
@@ -53,9 +56,10 @@ async function updateEvent(dateKey, eventId, eventData) {
 }
 
 // Delete event via API
-async function deleteEventAPI(dateKey, eventId) {
+async function deleteEventAPI(dateKey, eventId, deleteAll = false) {
     try {
-        const response = await fetch(`${API_BASE_URL}/events/${dateKey}/${eventId}`, {
+        const url = `${API_BASE_URL}/events/${dateKey}/${eventId}${deleteAll ? '?delete_all=true' : ''}`;
+        const response = await fetch(url, {
             method: 'DELETE'
         });
         return response.ok;
@@ -274,16 +278,27 @@ function openEventModal(date, event = null) {
     // Update modal title
     document.getElementById('modal-date').textContent = date.toDateString();
     
+    // Reset checkboxes
+    document.getElementById('recur-daily').checked = false;
+    document.getElementById('recur-weekly').checked = false;
+    document.getElementById('recur-monthly').checked = false;
+    
     if (event) {
         // Edit existing event
         titleInput.value = event.title;
         deleteBtn.style.display = 'block';
         deleteBtn.dataset.eventId = event.id;
+        
+        // Hide recurrence options for existing events
+        document.querySelector('.recurrence-options').style.display = 'none';
     } else {
         // New event
         titleInput.value = '';
         deleteBtn.style.display = 'none';
         deleteBtn.dataset.eventId = '';
+        
+        // Show recurrence options for new events
+        document.querySelector('.recurrence-options').style.display = 'block';
     }
     
     modal.style.display = 'flex';
@@ -324,15 +339,31 @@ async function saveEventHandler() {
             }
         }
     } else {
+        // Get selected recurrence options
+        const recurrenceTypes = [];
+        if (document.getElementById('recur-daily').checked) {
+            recurrenceTypes.push('daily');
+        }
+        if (document.getElementById('recur-weekly').checked) {
+            recurrenceTypes.push('weekly');
+        }
+        if (document.getElementById('recur-monthly').checked) {
+            recurrenceTypes.push('monthly');
+        }
+        
         // Create new event
         const newEvent = {
             id: Date.now().toString(),
             title,
-            date: selectedDate.toISOString()
+            date: selectedDate.toISOString(),
+            recurrence_types: recurrenceTypes
         };
-        success = await saveEvent(dateKey, newEvent);
-        if (success) {
-            events[dateKey].push(newEvent);
+        
+        const response = await saveEvent(dateKey, newEvent);
+        if (response) {
+            // Reload all events to show recurring events
+            await loadEvents();
+            success = true;
         }
     }
     
@@ -349,22 +380,28 @@ async function deleteEvent() {
     const eventId = this.dataset.eventId;
     const dateKey = formatDateKey(selectedDate);
     
-    if (confirm('Are you sure you want to delete this event?')) {
-        const success = await deleteEventAPI(dateKey, eventId);
-        
-        if (success) {
-            if (events[dateKey]) {
-                events[dateKey] = events[dateKey].filter(e => e.id !== eventId);
-                if (events[dateKey].length === 0) {
-                    delete events[dateKey];
-                }
-            }
-            
-            renderCalendar();
-            document.getElementById('event-modal').style.display = 'none';
-        } else {
-            alert('Failed to delete event. Please try again.');
+    // Check if event is part of a recurring series
+    const event = events[dateKey]?.find(e => e.id === eventId);
+    let deleteAll = false;
+    
+    if (event && event.recurrence_group_id) {
+        const choice = confirm('This is a recurring event. Delete all occurrences?\n\nOK = Delete all\nCancel = Delete only this event');
+        deleteAll = choice;
+    } else {
+        if (!confirm('Are you sure you want to delete this event?')) {
+            return;
         }
+    }
+    
+    const success = await deleteEventAPI(dateKey, eventId, deleteAll);
+    
+    if (success) {
+        // Reload all events to reflect changes
+        await loadEvents();
+        renderCalendar();
+        document.getElementById('event-modal').style.display = 'none';
+    } else {
+        alert('Failed to delete event. Please try again.');
     }
 }
 
