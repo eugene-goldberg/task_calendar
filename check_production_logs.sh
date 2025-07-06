@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "To check production logs, run one of these commands:"
+echo ""
+echo "1. Using Render CLI:"
+echo "   render logs calendar-app --tail"
+echo ""
+echo "2. Or check recent logs:"
+echo "   render logs calendar-app --since 10m"
+echo ""
+echo "3. Or go to Render Dashboard:"
+echo "   https://dashboard.render.com"
+echo "   Click on 'calendar-app' service"
+echo "   Click on 'Logs' tab"
+echo ""
+echo "Look for any error messages related to the POST request"
