@@ -6,12 +6,34 @@ let events = {};
 // API base URL
 const API_BASE_URL = '/api';
 
+// Get access token from localStorage
+function getAccessToken() {
+    return localStorage.getItem('access_token');
+}
+
+// Add authentication header to requests
+function getAuthHeaders() {
+    const token = getAccessToken();
+    if (!token) {
+        window.location.href = '/login';
+        return {};
+    }
+    return {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    };
+}
+
 // Load events from API
 async function loadEvents() {
     try {
-        const response = await fetch(`${API_BASE_URL}/events`);
+        const response = await fetch(`${API_BASE_URL}/events`, {
+            headers: getAuthHeaders()
+        });
         if (response.ok) {
             events = await response.json();
+        } else if (response.status === 401) {
+            window.location.href = '/login';
         }
     } catch (error) {
         console.error('Error loading events:', error);
@@ -23,13 +45,13 @@ async function saveEvent(dateKey, eventData) {
     try {
         const response = await fetch(`${API_BASE_URL}/events/${dateKey}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify(eventData)
         });
         if (response.ok) {
             return await response.json();
+        } else if (response.status === 401) {
+            window.location.href = '/login';
         }
         return null;
     } catch (error) {
@@ -43,11 +65,13 @@ async function updateEvent(dateKey, eventId, eventData) {
     try {
         const response = await fetch(`${API_BASE_URL}/events/${dateKey}/${eventId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ title: eventData.title })
         });
+        if (response.status === 401) {
+            window.location.href = '/login';
+            return false;
+        }
         return response.ok;
     } catch (error) {
         console.error('Error updating event:', error);
@@ -60,8 +84,13 @@ async function deleteEventAPI(dateKey, eventId, deleteAll = false) {
     try {
         const url = `${API_BASE_URL}/events/${dateKey}/${eventId}${deleteAll ? '?delete_all=true' : ''}`;
         const response = await fetch(url, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
+        if (response.status === 401) {
+            window.location.href = '/login';
+            return false;
+        }
         return response.ok;
     } catch (error) {
         console.error('Error deleting event:', error);
@@ -105,6 +134,12 @@ function setupEventListeners() {
     
     // Delete event
     document.getElementById('delete-event').addEventListener('click', deleteEvent);
+    
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+    });
 }
 
 // Render calendar

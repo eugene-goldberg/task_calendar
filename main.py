@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 from datetime import datetime, date, timedelta
@@ -11,8 +12,9 @@ from sqlalchemy import and_, extract
 import os
 import uuid
 
-from database import get_db, init_db, Event as EventModel
+from database import get_db, init_db, Event as EventModel, User
 from config import ALLOWED_ORIGINS, ENVIRONMENT
+from auth import authenticate_user, create_access_token, get_current_active_user, get_password_hash, ACCESS_TOKEN_EXPIRE_MINUTES
 
 app = FastAPI()
 
@@ -44,14 +46,63 @@ class Event(BaseModel):
 class EventUpdate(BaseModel):
     title: str
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page():
+    """Serve the login page"""
+    with open("templates/login.html", "r") as f:
+        return f.read()
+
+@app.post("/api/login", response_model=Token)
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    """Login endpoint"""
+    user = authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.username}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/api/register", status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    """Register a new user (protected endpoint - only for admin use)"""
+    # Check if username already exists
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # Create new user
+    hashed_password = get_password_hash(user_data.password)
+    db_user = User(username=user_data.username, hashed_password=hashed_password)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    
+    return {"message": "User created successfully", "username": db_user.username}
+
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    """Serve the main calendar page"""
+    """Serve the main calendar page (requires authentication)"""
+    # This route doesn't use authentication dependency
+    # The client-side JavaScript will handle redirecting to login
     with open("templates/index.html", "r") as f:
         return f.read()
 
 @app.get("/api/events")
-async def get_events(db: Session = Depends(get_db)):
+async def get_events(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Get all events organized by date"""
     events = db.query(EventModel).all()
     
@@ -66,7 +117,7 @@ async def get_events(db: Session = Depends(get_db)):
     return events_by_date
 
 @app.get("/api/events/{date}")
-async def get_events_by_date(date: str, db: Session = Depends(get_db)):
+async def get_events_by_date(date: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Get events for a specific date"""
     try:
         # Parse date string
@@ -86,7 +137,7 @@ async def get_events_by_date(date: str, db: Session = Depends(get_db)):
     return [event.to_dict() for event in events]
 
 @app.post("/api/events/{date}")
-async def create_event(date: str, event: Event, db: Session = Depends(get_db)):
+async def create_event(date: str, event: Event, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Create a new event with optional recurrence"""
     try:
         # Parse date string to ensure it's valid
@@ -168,7 +219,7 @@ async def create_event(date: str, event: Event, db: Session = Depends(get_db)):
     }
 
 @app.put("/api/events/{date}/{event_id}")
-async def update_event(date: str, event_id: str, event_update: EventUpdate, db: Session = Depends(get_db)):
+async def update_event(date: str, event_id: str, event_update: EventUpdate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Update an existing event"""
     # Find event by event_id
     db_event = db.query(EventModel).filter(EventModel.event_id == event_id).first()
@@ -189,7 +240,7 @@ async def update_event(date: str, event_id: str, event_update: EventUpdate, db: 
     return {"message": "Event updated", "event": db_event.to_dict()}
 
 @app.delete("/api/events/{date}/{event_id}")
-async def delete_event(date: str, event_id: str, delete_all: bool = False, db: Session = Depends(get_db)):
+async def delete_event(date: str, event_id: str, delete_all: bool = False, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     """Delete an event or all events in a recurrence group"""
     # Find event by event_id
     db_event = db.query(EventModel).filter(EventModel.event_id == event_id).first()

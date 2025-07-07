@@ -33,6 +33,7 @@ body {
     padding: 20px 30px;
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
+    position: relative;
 }
 
 .calendar-header h2 {
@@ -54,6 +55,26 @@ body {
 
 .nav-button:hover {
     background-color: #e9ecef;
+}
+
+.logout-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.logout-button:hover {
+    background-color: #c82333;
 }
 
 .calendar-grid {

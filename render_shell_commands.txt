@@ -1,0 +1,49 @@
+# Render Shell Commands - Run these in order
+
+# 1. First, start Python:
+python3
+
+# 2. Create the users table:
+from database import engine
+engine.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(100) UNIQUE NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE
+)
+""")
+print("Users table created!")
+
+# 3. Exit Python and install passlib if needed:
+exit()
+pip install passlib[bcrypt]
+
+# 4. Start Python again:
+python3
+
+# 5. Create a user:
+from database import SessionLocal
+from passlib.context import CryptContext
+
+# Hash the password
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+USERNAME = "-DZ-"
+PASSWORD = "@DZAdmin42!"
+hashed_password = pwd_context.hash(PASSWORD)
+
+# Insert user
+db = SessionLocal()
+from sqlalchemy import text
+db.execute(
+    text("INSERT INTO users (username, hashed_password, is_active) VALUES (:u, :p, true)"),
+    {"u": USERNAME, "p": hashed_password}
+)
+db.commit()
+print(f"User {USERNAME} created!")
+db.close()
+
+# 6. Exit Python:
+exit()
