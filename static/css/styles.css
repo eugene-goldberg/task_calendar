@@ -33,7 +33,12 @@ body {
     padding: 20px 30px;
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
-    position: relative;
+}
+
+.calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
 }
 
 .calendar-header h2 {
@@ -67,10 +72,8 @@ body {
     font-size: 14px;
     font-weight: 500;
     transition: background-color 0.2s;
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    margin-left: auto;
+    margin-right: 20px;
 }
 
 .logout-button:hover {
